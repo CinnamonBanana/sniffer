@@ -1,3 +1,5 @@
 datasets
-*model
+oldmodels
+
 __pycache__
+*.csv

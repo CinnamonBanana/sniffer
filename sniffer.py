@@ -12,13 +12,13 @@ class Sniffer():
     def __init__(self, adapter, parent=None):
         self.adapter = adapter
         self.exiting = False
-        self.mac = ''
+        self.mac = ""
         self.badmac = ''
         self.border = 0.75
         self.buffer = {}
-        self.filename = 'portscan_mobile.csv'
+        self.filename = 'data.csv'
         self.fieldnames = ['proto','ports', 'portmin', 'portmax', 'delay', 'count', 'length', 'suspicious']
-        self.model = pickle.load(open('questionmodel', "rb"))
+        self.model = pickle.load(open('model', "rb"))
         try:
             with open(self.filename, 'r') as csvfile:
                 print('file already exists!')
@@ -39,9 +39,9 @@ class Sniffer():
     def pktProcess(self, pkt):
         data = self.pkt_info(pkt)
         if not data: return
-        #pred = self.predictor(data)
-        #print(f"{pkt['Ether'].src} is {'bad ' if 1.1>pred>self.border else 'good'} ({pred})")
-        self.collector(pkt['Ether'].src, data) 
+        pred = self.predictor(data)
+        print(f"{pkt['Ether'].src} is {'bad ' if pred else 'good'} (data={data})")
+        #self.collector(pkt['Ether'].src, data) 
     
     def collector(self, src, data, show = False):
         if src == self.badmac:
@@ -54,7 +54,7 @@ class Sniffer():
            writer.writerow(data)
 
     def predictor(self, data):
-        df = pd.DataFrame(columns=self.fieldnames)
+        df = pd.DataFrame(columns=self.fieldnames[:-1])
         df.loc[0] = list(data.values())
         return self.model.predict(df)[0]
 
@@ -127,7 +127,8 @@ class Sniffer():
                         }
 
     def isNotOutgoing(self, pkt):
-        return pkt['Ether'].src != self.mac
+        if 'Ether' in pkt:
+            return pkt['Ether'].src != self.mac
 
 
 if __name__ == "__main__":
